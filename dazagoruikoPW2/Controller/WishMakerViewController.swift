@@ -1,24 +1,7 @@
 import UIKit
 
-enum Constants {
-    static let titleLeading: CGFloat = 20
-    static let titleTop: CGFloat = 30
-    static let descriptionTop: CGFloat = 90
-    static let descriptionLeading: CGFloat = 20
-    static let descriptionTrailing: CGFloat = -20
-    static let slidersStackLeading: CGFloat = 20
-    static let slidersStackBottom: CGFloat = -220
-    static let slidersCornerRadius: CGFloat = 12
-    static let sliderMin: Double = 0
-    static let sliderMax: Double = 1
-    static let buttonHeight: CGFloat = 44
-    static let buttonsStackBottom: CGFloat = -40
-}
-
 final class WishMakerViewController: UIViewController {
-    private var red: CGFloat = 1
-    private var green: CGFloat = 1
-    private var blue: CGFloat = 1
+    private let model = BackgroundColorModel()
     private var slidersStack: UIStackView!
 
     override func viewDidLoad() {
@@ -27,12 +10,14 @@ final class WishMakerViewController: UIViewController {
     }
 
     private func configureUI() {
-        view.backgroundColor = .systemPink
+        view.backgroundColor = model.color
         configureTitle()
         configureDescription()
         configureSliders()
         configureButtonsStack()
     }
+
+    // MARK: - Title & Description
 
     private func configureTitle() {
         let title = UILabel()
@@ -64,6 +49,8 @@ final class WishMakerViewController: UIViewController {
         ])
     }
 
+    // MARK: - Sliders
+
     private func configureSliders() {
         slidersStack = UIStackView()
         slidersStack.translatesAutoresizingMaskIntoConstraints = false
@@ -88,21 +75,20 @@ final class WishMakerViewController: UIViewController {
         ])
 
         sliderRed.valueChanged = { [weak self] value in
-            guard let self = self else { return }
-            self.red = CGFloat(value)
-            self.updateBackgroundColor()
+            self?.model.update(red: CGFloat(value))
+            self?.updateBackgroundColor()
         }
         sliderGreen.valueChanged = { [weak self] value in
-            guard let self = self else { return }
-            self.green = CGFloat(value)
-            self.updateBackgroundColor()
+            self?.model.update(green: CGFloat(value))
+            self?.updateBackgroundColor()
         }
         sliderBlue.valueChanged = { [weak self] value in
-            guard let self = self else { return }
-            self.blue = CGFloat(value)
-            self.updateBackgroundColor()
+            self?.model.update(blue: CGFloat(value))
+            self?.updateBackgroundColor()
         }
     }
+
+    // MARK: - Buttons
 
     private func configureButtonsStack() {
         let buttonsStack = UIStackView()
@@ -135,8 +121,10 @@ final class WishMakerViewController: UIViewController {
         return button
     }
 
+    // MARK: - Actions
+
     private func updateBackgroundColor() {
-        view.backgroundColor = UIColor(red: red, green: green, blue: blue, alpha: 1)
+        view.backgroundColor = model.color
     }
 
     @objc private func toggleSliders() {
@@ -144,9 +132,7 @@ final class WishMakerViewController: UIViewController {
     }
 
     @objc private func applyRandomColor() {
-        red = CGFloat.random(in: 0...1)
-        green = CGFloat.random(in: 0...1)
-        blue = CGFloat.random(in: 0...1)
+        model.randomize()
         updateBackgroundColor()
     }
 
@@ -159,63 +145,5 @@ final class WishMakerViewController: UIViewController {
             self?.view.backgroundColor = color
         })
         present(alert, animated: true)
-    }
-}
-
-final class CustomSlider: UIView {
-    var valueChanged: ((Double) -> Void)?
-    var slider = UISlider()
-    var titleView = UILabel()
-
-    init(title: String, min: Double, max: Double) {
-        super.init(frame: .zero)
-        titleView.text = title
-        slider.minimumValue = Float(min)
-        slider.maximumValue = Float(max)
-        slider.addTarget(self, action: #selector(sliderValueChanged), for: .valueChanged)
-        configureUI()
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("инициализатор не был реализован")
-    }
-
-    private func configureUI() {
-        backgroundColor = .clear
-        translatesAutoresizingMaskIntoConstraints = false
-        for view in [slider, titleView] {
-            addSubview(view)
-            view.translatesAutoresizingMaskIntoConstraints = false
-        }
-        NSLayoutConstraint.activate([
-            titleView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            titleView.topAnchor.constraint(equalTo: topAnchor, constant: 10),
-            titleView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            slider.topAnchor.constraint(equalTo: titleView.bottomAnchor),
-            slider.centerXAnchor.constraint(equalTo: centerXAnchor),
-            slider.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -10),
-            slider.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20)
-        ])
-    }
-
-    @objc private func sliderValueChanged() {
-        valueChanged?(Double(slider.value))
-    }
-}
-
-// расширение для HEX
-extension UIColor {
-    convenience init?(hex: String) {
-        var hexString = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
-        if hexString.hasPrefix("#") { hexString.removeFirst() }
-        guard hexString.count == 6,
-              let rgbValue = UInt64(hexString, radix: 16) else { return nil }
-        self.init(
-            red: CGFloat((rgbValue & 0xFF0000) >> 16) / 255.0,
-            green: CGFloat((rgbValue & 0x00FF00) >> 8) / 255.0,
-            blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
-            alpha: 1.0
-        )
     }
 }
